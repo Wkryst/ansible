@@ -1,6 +1,6 @@
 ---
 - name: Check connectivity with servers
-  hosts: "{{ hosts_var }}"
+  hosts: all
   gather_facts: no
 
   tasks:
