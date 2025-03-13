@@ -1,0 +1,17 @@
+---
+- name: Check connectivity with servers
+  hosts: "{{ hosts_var }}"
+  gather_facts: no
+
+  tasks:
+    - name: Ping servers
+      ansible.builtin.ping:
+
+    - name: Gather system information
+      ansible.builtin.setup:
+      tags: system_info
+
+    - name: Display hostname and OS info
+      debug:
+        msg: "{{ inventory_hostname }} - {{ ansible_os_family }} {{ ansible_distribution_version }}"
+      tags: system_info
