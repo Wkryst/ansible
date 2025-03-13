@@ -1,0 +1,24 @@
+---
+- name: Update, Upgrade, and Reboot if Necessary (Ubuntu/Kali)
+  hosts: all
+  become: yes
+  tasks:
+
+    - name: Update package list
+      apt:
+        update_cache: yes
+
+    - name: Upgrade all packages
+      apt:
+        upgrade: dist
+        autoremove: yes
+      register: upgrade_result
+
+    - name: Check if a reboot is required
+      stat:
+        path: /var/run/reboot-required
+      register: reboot_required
+
+    - name: Reboot if necessary
+      reboot:
+      when: reboot_required.stat.exists or upgrade_result.changed
