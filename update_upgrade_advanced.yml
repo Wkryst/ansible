@@ -1,0 +1,51 @@
+---
+- name: Full unattended update → upgrade → reboot
+  hosts: all
+  become: yes
+
+  tasks:
+    - name: Wait for any apt lock
+      wait_for:
+        path: "{{ item }}"
+        state: absent
+        timeout: 300
+      loop:
+        - /var/lib/apt/lists/lock
+        - /var/lib/dpkg/lock
+        - /var/cache/apt/archives/lock
+
+    - name: Update apt cache (valid for 1h)
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+      tags: update
+
+    - name: Upgrade all packages non-interactively
+      apt:
+        upgrade: dist
+        autoremove: yes
+        autoclean: yes
+        dpkg_options:
+          - force-confdef
+          - force-confold
+        lock_timeout: 60
+      environment:
+        DEBIAN_FRONTEND: noninteractive
+      register: upgrade_result
+      tags: upgrade
+
+    - name: Check if reboot is required
+      stat:
+        path: /var/run/reboot-required
+      register: reboot_required
+      tags: reboot_check
+
+    - name: Reboot if required (detached)
+      reboot:
+        reboot_timeout: 300
+        test_command: whoami
+        post_reboot_delay: 30
+      when: reboot_required.stat.exists
+      async: 1
+      poll: 0
+      tags: reboot
